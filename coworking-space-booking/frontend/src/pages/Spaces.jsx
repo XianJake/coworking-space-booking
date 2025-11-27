@@ -7,6 +7,16 @@ const Spaces = () => {
   const [spaces, setSpaces] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Base pricing calculation
+  const HOURLY_RATE = 45;
+  const calculateRates = () => ({
+    hourly: HOURLY_RATE,
+    halfDay: HOURLY_RATE * 4,      // 4 hours = ₱180
+    fullDay: HOURLY_RATE * 8,      // 8 hours = ₱360
+    weekly: HOURLY_RATE * 8 * 5,   // 5 days × 8 hours = ₱1,800
+    monthly: HOURLY_RATE * 8 * 20  // 20 days × 8 hours = ₱7,200
+  });
+
   useEffect(() => {
     fetchSpaces();
   }, []);
@@ -21,6 +31,8 @@ const Spaces = () => {
       setLoading(false);
     }
   };
+
+  const rates = calculateRates();
 
   if (loading) {
     return (
@@ -64,23 +76,23 @@ const Spaces = () => {
               <div className="bg-gray-light p-4 rounded-lg mb-4 space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Hourly</span>
-                  <span className="font-bold text-primary-navy">₱{space.hourly_rate}</span>
+                  <span className="font-bold text-primary-navy">₱{rates.hourly}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Half Day (4hrs)</span>
-                  <span className="font-bold text-primary-navy">₱{space.half_day_rate}</span>
+                  <span className="font-bold text-primary-navy">₱{rates.halfDay}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Full Day (8hrs)</span>
-                  <span className="font-bold text-primary-navy">₱{space.full_day_rate}</span>
+                  <span className="font-bold text-primary-navy">₱{rates.fullDay}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Weekly</span>
-                  <span className="font-bold text-primary-navy">₱{space.weekly_rate}</span>
+                  <span className="text-sm text-gray-600">Weekly (5 days)</span>
+                  <span className="font-bold text-primary-navy">₱{rates.weekly.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Monthly</span>
-                  <span className="font-bold text-primary-navy">₱{space.monthly_rate}</span>
+                  <span className="text-sm text-gray-600">Monthly (20 days)</span>
+                  <span className="font-bold text-primary-navy">₱{rates.monthly.toLocaleString()}</span>
                 </div>
               </div>
 

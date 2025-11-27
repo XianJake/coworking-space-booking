@@ -21,7 +21,7 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="text-2xl font-bold text-primary-navy">
-              CoWork<span className="text-accent-orange">Space</span>
+              Commun<span className="text-accent-orange">Side</span>
             </div>
           </Link>
 
@@ -49,7 +49,15 @@ const Navbar = () => {
                   <Calendar size={18} />
                   My Bookings
                 </Link>
-                
+
+                <Link
+                  to="/profile"
+                  className="text-gray-dark hover:text-accent-orange font-medium transition-colors flex items-center gap-2"
+                >
+                  <User size={18} />
+                  Profile
+                </Link>
+
                 {(user.role === 'admin' || user.role === 'staff') && (
                   <Link
                     to="/admin"
@@ -59,10 +67,9 @@ const Navbar = () => {
                     Admin
                   </Link>
                 )}
-                
+
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2 px-3 py-2 bg-gray-light rounded-lg">
-                    <User size={18} className="text-primary-navy" />
                     <span className="text-sm font-medium text-gray-dark">
                       {user.name}
                       {user.isMember && (
@@ -130,7 +137,15 @@ const Navbar = () => {
                 >
                   My Bookings
                 </Link>
-                
+
+                <Link
+                  to="/profile"
+                  className="block text-gray-dark hover:text-accent-orange font-medium py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Profile
+                </Link>
+
                 {(user.role === 'admin' || user.role === 'staff') && (
                   <Link
                     to="/admin"

@@ -8,6 +8,7 @@ import SpaceDetails from './pages/SpaceDetails';
 import Booking from './pages/Booking';
 import MyBookings from './pages/MyBookings';
 import Membership from './pages/Membership';
+import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import AdminDashboard from './pages/AdminDashboard';
@@ -65,6 +66,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <MyBookings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
                 </ProtectedRoute>
               }
             />

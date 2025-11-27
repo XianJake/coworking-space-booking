@@ -41,7 +41,7 @@ const Login = () => {
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-gray-200">Sign in to your CoWorkSpace account</p>
+          <p className="text-gray-200">Sign in to your CommunSide account</p>
         </div>
 
         <div className="card p-8">

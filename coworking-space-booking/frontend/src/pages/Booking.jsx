@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { spaceAPI, bookingAPI, paymentAPI } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Calendar, Clock, Users, CreditCard } from 'lucide-react';
+import { calculatePrice, formatDuration, formatPrice } from '../utils/priceCalculator';
 
 const Booking = () => {
   const { spaceId } = useParams();
@@ -22,7 +23,10 @@ const Booking = () => {
     basePrice: 0,
     discount: 0,
     total: 0,
-    deposit: 0
+    deposit: 0,
+    hours: 0,
+    minutes: 0,
+    priceBreakdown: null
   });
   const [paymentMethod, setPaymentMethod] = useState('gcash');
   const [submitting, setSubmitting] = useState(false);
@@ -53,40 +57,27 @@ const Booking = () => {
   const calculatePricing = () => {
     if (!space) return;
 
-    let basePrice = 0;
-    const { durationType, numberOfSeats } = bookingData;
+    const { startDatetime, endDatetime, numberOfSeats } = bookingData;
 
-    switch (durationType) {
-      case 'hourly':
-        basePrice = space.hourly_rate;
-        break;
-      case 'half_day':
-        basePrice = space.half_day_rate;
-        break;
-      case 'full_day':
-        basePrice = space.full_day_rate;
-        break;
-      case 'weekly':
-        basePrice = space.weekly_rate;
-        break;
-      case 'monthly':
-        basePrice = space.monthly_rate;
-        break;
-      default:
-        basePrice = space.hourly_rate;
-    }
+    // Use the new time-based calculator (45 pesos/hour, 1.50 pesos/minute)
+    const memberDiscount = user?.membershipDiscount || 0;
+    const priceBreakdown = calculatePrice(
+      startDatetime,
+      endDatetime,
+      parseInt(numberOfSeats) || 1,
+      memberDiscount
+    );
 
-    const total = basePrice * numberOfSeats;
-    const discountPercent = user?.isMember ? space.member_discount_percent : 0;
-    const discount = (total * discountPercent) / 100;
-    const finalTotal = total - discount;
-    const deposit = finalTotal * 0.5;
+    const deposit = priceBreakdown.total * 0.5;
 
     setPricing({
-      basePrice: total,
-      discount,
-      total: finalTotal,
-      deposit
+      basePrice: priceBreakdown.subtotal,
+      discount: priceBreakdown.discount,
+      total: priceBreakdown.total,
+      deposit,
+      hours: priceBreakdown.hours,
+      minutes: priceBreakdown.minutes,
+      priceBreakdown
     });
   };
 
@@ -187,26 +178,6 @@ const Booking = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Clock className="inline mr-2" size={16} />
-                  Duration Type
-                </label>
-                <select
-                  name="durationType"
-                  value={bookingData.durationType}
-                  onChange={handleInputChange}
-                  className="input-field"
-                  required
-                >
-                  <option value="hourly">Hourly</option>
-                  <option value="half_day">Half Day (4 hours)</option>
-                  <option value="full_day">Full Day (8 hours)</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
                   <Users className="inline mr-2" size={16} />
                   Number of Seats
                 </label>
@@ -297,25 +268,61 @@ const Booking = () => {
         <div>
           <div className="card p-6 sticky top-24">
             <h3 className="text-xl font-bold text-primary-navy mb-6">Price Summary</h3>
-            
+
             <div className="space-y-4 mb-6">
+              {/* Duration Display */}
+              {pricing.hours > 0 || pricing.minutes > 0 ? (
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">Duration</p>
+                  <p className="text-lg font-bold text-primary-navy">
+                    {formatDuration(pricing.hours, pricing.minutes)}
+                  </p>
+                </div>
+              ) : null}
+
+              {/* Pricing Breakdown */}
+              {pricing.priceBreakdown && pricing.priceBreakdown.breakdown && (
+                <div className="text-sm space-y-2">
+                  <div className="flex justify-between text-gray-600">
+                    <span>{pricing.hours} hour(s) × ₱45</span>
+                    <span>₱{pricing.priceBreakdown.breakdown.hourlyCharge.toFixed(2)}</span>
+                  </div>
+                  {pricing.minutes > 0 && (
+                    <div className="flex justify-between text-gray-600">
+                      <span>{pricing.minutes} min(s) × ₱1.50</span>
+                      <span>₱{pricing.priceBreakdown.breakdown.minuteCharge.toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="flex justify-between">
-                <span className="text-gray-600">Base Price</span>
+                <span className="text-gray-600">Price per Seat</span>
+                <span className="font-semibold">₱{pricing.priceBreakdown?.pricePerSeat?.toFixed(2) || '0.00'}</span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-gray-600">Number of Seats</span>
+                <span className="font-semibold">×{bookingData.numberOfSeats}</span>
+              </div>
+
+              <div className="flex justify-between border-t pt-2">
+                <span className="text-gray-600">Subtotal</span>
                 <span className="font-semibold">₱{pricing.basePrice.toFixed(2)}</span>
               </div>
-              
-              {user?.isMember && pricing.discount > 0 && (
+
+              {user?.membershipDiscount > 0 && pricing.discount > 0 && (
                 <div className="flex justify-between text-success">
-                  <span>Member Discount ({space.member_discount_percent}%)</span>
+                  <span>Member Discount ({user.membershipDiscount}%)</span>
                   <span className="font-semibold">-₱{pricing.discount.toFixed(2)}</span>
                 </div>
               )}
-              
+
               <div className="border-t pt-4 flex justify-between text-lg">
                 <span className="font-bold">Total Amount</span>
                 <span className="font-bold text-primary-navy">₱{pricing.total.toFixed(2)}</span>
               </div>
-              
+
               <div className="bg-accent-orange bg-opacity-10 p-4 rounded-lg">
                 <div className="flex justify-between mb-2">
                   <span className="text-sm font-medium">Deposit (50%)</span>
@@ -329,11 +336,16 @@ const Booking = () => {
             </div>
 
             <div className="bg-gray-light p-4 rounded-lg text-sm text-gray-600">
-              <p className="mb-2">📝 <strong>Payment Terms:</strong></p>
+              <p className="mb-2">💰 <strong>Pricing:</strong></p>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                <li>₱45 per hour</li>
+                <li>₱1.50 per additional minute</li>
+                <li>Minimum booking: 1 hour</li>
+              </ul>
+              <p className="mt-3 mb-2">📝 <strong>Payment Terms:</strong></p>
               <ul className="list-disc list-inside space-y-1 ml-2">
                 <li>50% deposit required now</li>
                 <li>Remaining 50% due after use</li>
-                <li>Extensions charged separately</li>
               </ul>
             </div>
           </div>
